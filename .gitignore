@@ -1,3 +1,12 @@
+.vscode
+.download
+
+build
+
+python/__pycache__
+
+3rd/libev
+
 # Object files
 *.o
 *.ko

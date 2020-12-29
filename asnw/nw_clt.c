@@ -230,6 +230,7 @@ int nw_clt_start(nw_clt *clt)
         return -1;
     }
     clt->ses.sockfd = sockfd;
+#ifdef __NW_USE_UNIX_SOCK__
     if (clt->ses.peer_addr.family == AF_UNIX && clt->ses.sock_type == SOCK_DGRAM) {
         clt->ses.host_addr->un.sun_family = AF_UNIX;
         generate_random_path(clt->ses.host_addr->un.sun_path, sizeof(clt->ses.host_addr->un.sun_path), "dgram", ".sock");
@@ -237,7 +238,7 @@ int nw_clt_start(nw_clt *clt)
             return -1;
         }
     }
-
+#endif
     if (clt->ses.sock_type == SOCK_STREAM || clt->ses.sock_type == SOCK_SEQPACKET) {
         clt->connected = false;
         clt->on_connect_called = false;

@@ -27,9 +27,11 @@ char *nw_sock_human_addr(nw_addr_t *addr)
         inet_ntop(addr->family, &addr->in6.sin6_addr, ip, sizeof(ip));
         snprintf(str, sizeof(str), "%s:%u", ip, ntohs(addr->in6.sin6_port));
         break;
+#ifdef __NW_USE_UNIX_SOCK__
     case AF_UNIX:
         snprintf(str, sizeof(str), "%s:%s", "unix", (addr->un.sun_path));
         break;
+#endif
     default:
         str[0] = 0;
         break;
@@ -51,9 +53,11 @@ char *nw_sock_human_addr_s(nw_addr_t *addr, char *dest)
         inet_ntop(addr->family, &addr->in6.sin6_addr, ip, sizeof(ip));
         snprintf(dest, NW_HUMAN_ADDR_SIZE, "%s:%u", ip, ntohs(addr->in6.sin6_port));
         break;
+#ifdef __NW_USE_UNIX_SOCK__
     case AF_UNIX:
         snprintf(dest, NW_HUMAN_ADDR_SIZE, "%s:%s", "unix", (addr->un.sun_path));
         break;
+#endif
     default:
         dest[0] = 0;
         break;
@@ -94,17 +98,23 @@ char *nw_sock_ip_s(nw_addr_t *addr, char *ip)
     }
     return ip;
 }
-
+#ifdef __NW_USE_UNIX_SOCK__
 int nw_sock_set_mode(nw_addr_t *addr, mode_t mode)
 {
     if (addr->family != AF_UNIX)
         return 0;
+    
     return chmod(addr->un.sun_path, mode);
 }
+#endif
 
 int nw_sock_peer_addr(int sockfd, nw_addr_t *addr)
 {
+#ifdef __NW_USE_UNIX_SOCK__
     addr->addrlen = sizeof(addr->un);
+#else
+    addr->addrlen = sizeof(addr->in6);
+#endif
     if (getpeername(sockfd, NW_SOCKADDR(addr), &addr->addrlen) == 0)
     {
         addr->family = NW_SOCKADDR(addr)->sa_family;
@@ -115,7 +125,11 @@ int nw_sock_peer_addr(int sockfd, nw_addr_t *addr)
 
 int nw_sock_host_addr(int sockfd, nw_addr_t *addr)
 {
+#ifdef __NW_USE_UNIX_SOCK__
     addr->addrlen = sizeof(addr->un);
+#else
+    addr->addrlen = sizeof(addr->in6);
+#endif
     if (getsockname(sockfd, NW_SOCKADDR(addr), &addr->addrlen) == 0)
     {
         addr->family = NW_SOCKADDR(addr)->sa_family;
@@ -147,7 +161,7 @@ static int nw_sock_addr_fill_inet(nw_addr_t *addr, const char *host, const char 
 
     return 0;
 }
-
+#ifdef __NW_USE_UNIX_SOCK__
 int nw_sock_addr_fill_unix(nw_addr_t *addr, const char* unix_path)
 {
     size_t pathlen = strlen(unix_path);
@@ -161,7 +175,7 @@ int nw_sock_addr_fill_unix(nw_addr_t *addr, const char* unix_path)
 
     return 0;
 }
-
+#endif
 int nw_sock_cfg_parse(const char *cfg, nw_addr_t *addr, int *sock_type)
 {
     char *s = strdup(cfg);
@@ -181,12 +195,14 @@ int nw_sock_cfg_parse(const char *cfg, nw_addr_t *addr, int *sock_type)
     } else if (strcasecmp(type, "udp") == 0) {
         *sock_type = SOCK_DGRAM;
         is_inet = 1;
+#ifdef __NW_USE_UNIX_SOCK__
     } else if (strcasecmp(type, "stream") == 0) {
         *sock_type = SOCK_STREAM;
     } else if (strcasecmp(type, "dgram") == 0) {
         *sock_type = SOCK_DGRAM;
     } else if (strcasecmp(type, "seqpacket") == 0) {
         *sock_type = SOCK_SEQPACKET;
+#endif
     } else {
         free(s);
         return -2;
@@ -206,10 +222,12 @@ int nw_sock_cfg_parse(const char *cfg, nw_addr_t *addr, int *sock_type)
             return -4;
         }
     } else {
+#ifdef __NW_USE_UNIX_SOCK__
         if (nw_sock_addr_fill_unix(addr, name) < 0) {
             free(s);
             return -5;
         }
+#endif
     }
 
     free(s);

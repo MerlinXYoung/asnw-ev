@@ -22,7 +22,9 @@ typedef struct nw_addr_t {
     union {
         struct sockaddr_in  in;
         struct sockaddr_in6 in6;
+#ifdef __NW_USE_UNIX_SOCK__
         struct sockaddr_un  un;
+#endif
     };
 } nw_addr_t;
 

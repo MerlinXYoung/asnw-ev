@@ -357,15 +357,19 @@ static void libev_on_connect_evt(struct ev_loop *loop, ev_io *watcher, int event
 
 int nw_ses_bind(nw_ses *ses, nw_addr_t *addr)
 {
+#ifdef __NW_USE_UNIX_SOCK__
     if (addr->family == AF_UNIX) {
         unlink(addr->un.sun_path);
     }
+#endif
     int ret = bind(ses->sockfd, NW_SOCKADDR(addr), addr->addrlen);
     if (ret < 0)
         return ret;
+#ifdef __NW_USE_UNIX_SOCK__
     if (addr->family == AF_UNIX) {
         return nw_sock_set_mode(addr, 0777);
     }
+#endif
     return 0;
 }
 
